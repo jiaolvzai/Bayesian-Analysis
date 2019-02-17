@@ -1,0 +1,12 @@
+1. Write a function to sample from the Weibull distribution using the inverse transformation method from the slides. Compare a histogram of 1000 draws from your function to a histogram of 1000 draws from rweibull().
+ 
+
+2. Write a function to sample from the truncated standard Normal distribution bounded by -1 and 1 using the rejection sampling method.
+ 
+
+ 
+3.
+a) Write a function to generate random samples from an Exponential distribution using the Metropolis method with a uniform proposal distribution. Generate 1000 draws from the Exponential(rate=10) distribution, and plot the histogram of the last 500. Does the distribution look like hist(rexp(500,rate=10))? If not, alter the range of your proposal distribution until it does. What was a good proposal distribution? Using this same proposal distribution, generate 1000 draws from the Exponential(rate=.01) distribution and plot a histogram of the last 500. Does your histogram look like hist(rexp(500,rate=.01))? If not, find a better proposal distribution.
+ [Note: I'm having you discard the first 500 of the samples you generated. This is so that your samples are not influenced by the arbitrary starting point you chose. The early parts of a MCMC chain that we discard are called a "burn-in".]
+
+b) Take 50 samples of 500 draws (after burn-in) from the Exponential(.01) distribution. Plot a histogram of their medians and add the true median to the plot. Plot a histogram of their .99 quantiles and add the true .99 quantile to the plot. How do you explain any difference between these two histograms? (Use qexp() function to find true values). 
