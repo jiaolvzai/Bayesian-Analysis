@@ -1,0 +1,65 @@
+#load library and set directory
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") require(rjags)
+# Load the data:
+dataList=list( # Put the information into a list. "n" = 100,
+"r" = 20,
+"u" = 200
+)
+# Define the model: modelString = " model {
+r ~ dbin(theta, n)
+u ~ dbin(theta, U)
+theta ~ dunif(0.01, 0.99) U_random ~ dunif(0, 10000) U <- round(U_random)
+N <- U + n
+}
+"# close quote for modelString
+writeLines( modelString , con="TEMPmodel.txt" )
+# Run the chains:
+jagsModel = jags.model( file="TEMPmodel.txt" , data=dataList , #inits=initsList ,
+n.chains=3 , n.adapt=500 ) update( jagsModel , n.iter=500 )
+codaSamples = coda.samples( jagsModel , variable.names=c("N","U","theta") , n.iter=3334 )
+plot(codaSamples)
+# Posterior descriptives:
+par(mfrow=c(1,1))
+draws = data.frame(do.call(rbind,codaSamples)) summary(draws)
+hist(draws$N)
+hist(draws$theta)
+
+
+Q2
+#load library and set directory
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") require(rjags)
+library(readr)
+data <- read_csv("~/Downloads/cheat.csv",
+col_names = FALSE) View(data)
+y <- apply(data, 1, sum) y
+datlist = list(
+"N" = 118,
+"y" = y,
+"alpha" = rep(1,2)
+)
+modelString = "
+model{
+for( i in 1 : N ) {
+y[i] ~ dnorm(mu[i], tau) mu[i] <- theta[T[i]]*40 T[i] ~ dcat(P[])
+HW8 yw3100
+}
+P[1:2] ~ ddirch(alpha[])
+theta[1] ~ dunif(0,1) #not cheating
+theta[2] ~ dunif(theta[1],1) #cheating
+tau ~ dgamma(0.001, 0.001)
+sigma <- 1 / sqrt(tau)
+}
+"
+writeLines( modelString , con="TEMPmodel.txt" )
+#run the chians
+jagsModel = jags.model( file="TEMPmodel.txt" , data=datlist ,
+n.chains=3 , n.adapt=500 ) update( jagsModel , n.iter=10000 )
+codaSamples = coda.samples( jagsModel , variable.names=c('theta','mu','T','P') , n.iter=3334 )
+# Posterior descriptives:
+par(mfrow = c(2,2)) plotPost(codaSamples[,'theta[1]']) plotPost(codaSamples[,'theta[2]']) plotPost(codaSamples[,'P[1]']) plotPost(codaSamples[,'P[2]'])
