@@ -1,0 +1,76 @@
+#load library and set directory
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") 
+require(rjags)               
+
+# Load the data:
+data = data.frame(
+  y = c(28,8,-3,7,-1,1,18,12),
+  s = c(15,10,16,11,9,11,10,18))
+
+y = data$y        # The y values are in the column named y.
+s = data$s
+Ntotal = length(y)  # Compute the total number of programs.
+dataList = list(    # Put the information into a list.
+  y = y ,
+  Ntotal = Ntotal,
+  s = s
+)
+
+
+# Define the model:
+modelString = "
+model {
+for ( i in 1:Ntotal ) {
+  y[i] ~ dnorm(theta[i],pow(s[i],-2))
+  theta[i] ~ dnorm(theta0,pow(s0,-2))
+}
+theta0 ~ dnorm(0,pow(2400,-2)) #uniform vague full mark of SAT=2400
+s0 ~ dunif(0,2400)
+#theta_new ~ dnorm(theta0,pow(s0,-2))
+}
+
+"# close quote for modelString
+writeLines( modelString , con="TEMPmodel.txt" )
+
+# Initialize the chains based on MLE of data.
+initsList = function() {
+  return(list(theta0=runif(1),s0=runif(1),theta =runif(Ntotal)))
+}
+
+# Run the chains:
+jagsModel = jags.model( file="TEMPmodel.txt" , data=dataList , inits=initsList , 
+                        n.chains=3 , n.adapt=500 )
+update( jagsModel , n.iter=500 )
+codaSamples = coda.samples( jagsModel , variable.names=c("theta0","s0","theta") ,
+                            n.iter=3334 )
+
+plot(codaSamples)
+
+# Posterior descriptives:
+par(mfrow=c(1,1))
+draws = data.frame(do.call(rbind,codaSamples))
+summary(draws)
+hist(draws$theta0)
+hist(draws$s0)
+par(mfrow=c(2,1))
+hist(draws$theta.1.,xlim=c(-30,60))
+hist(draws$theta.3.,xlim=c(-50,50))
+
+#1 What is the probability that the true effect of the program with the highest estimated effect is greater than the true effect of the program with the lowest estimated effect? 
+draws$diff=draws$theta.1.-draws$theta.3.
+length(which(draws$diff>0))/length(draws$diff)
+
+#2 What is the probability that SAT programs are effective on average? 
+length(which(draws$theta0>0))/(length(draws$theta0))
+
+#3 Suppose a new SAT program is to be instituted at a new school. What is the probability that it will be effective?
+par(mfrow=c(1,1))
+plot(apply(draws[,2:9],2,mean),main='model estimates',ylim=c(-30,40),ylab='')
+plot(y,main='raw estimates',ylim=c(-30,40),ylab='')
+a<-rnorm(10000,draws$theta0,draws$s0)
+length(which(a>0))/10000
+
