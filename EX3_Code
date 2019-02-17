@@ -1,0 +1,126 @@
+#1 results approximate the distribution of (A,B)，would be better if not just 200 draws.
+library(plyr) 
+gibbs<-function (n) 
+{
+  mat <- matrix(NA, ncol=2, nrow=n)
+  x <- 0
+  y <- 0
+
+  mat[1,] <- c(x, y)
+
+  for (i in 2:n) {
+    x <- rbinom(1,1,0.5) 
+    y <- rbinom(1,1,0.5)
+    mat[i,] <- c(x, y)
+  }
+ mat
+}
+sample<-gibbs(200)
+sample_burn=sample[101:200,]
+sample_burn <- as.data.frame(sample_burn)
+colnames(sample_burn) <- c("X","Y")
+sumrz<-count(sample_burn, c('X', 'Y')) 
+prop.table(sumrz$freq)
+
+#2 results do not approximate the distribution of (A,B) if choose （0，0）to start with
+#get slightly better simulation if start with (1,0) or (0,1) ;largely because A and B are dependent and it takes longer burn out period for (0,0). 
+#that A B are dependent can explain the difference from my answer to 3. 
+#p(a=1)=p(a=0)=.5, p(b=1)=p(b=0)=.5
+#Since p(a=1)*p(b=1) != p(a=1,b=1), A and B are dependent.
+
+gibbs <- function(n) {
+  mat <- data.frame(x=NA, y=NA)
+  x <- 0
+  y <- 1
+  mat[1,] <- c(x, y)
+  for (i in 2:n) {
+    x <- ifelse(y==1, rbinom(1,1,0.998), rbinom(1,1,0.002))
+    y <- ifelse(x==1, rbinom(1,1,0.998), rbinom(1,1,0.002))
+    mat[i,] <- c(x, y)
+  }
+  mat
+}
+
+sample <- gibbs(200)
+sample_burn <- sample[101:200,]
+sumrz <- count(sample_burn, c('x', 'y'))
+sumrz
+prop.table(sumrz$freq)
+
+#3
+install.packages("rjags")
+install.packages("HDInterval")
+library(HDInterval)
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") 
+require(rjags)              
+
+# Load the data:
+y = c(11.46, 14.71, 9.52, 10.04, 9.78, 10.32, 9.88, 8.27, 10.07, 13.62, 11.00, 10.25, 15.94, 14.10, 12.25, 12.91, 10.67, 12.58, 14.36, 13.12)        # The y values are in the column named y.
+s = c(rep(1,10),rep(2,10))
+Ntotal = length(y)  # Compute the total number of observations.
+N_subjects = length(unique(s))
+dataList = list(    # Put the information into a list.
+  y = y , s = s,
+  Ntotal = Ntotal, N_subjects = N_subjects 
+)
+# Define the model:
+modelString = "
+model {
+for ( i in 1:Ntotal ) {
+y[i] ~ dnorm( theta[s[i]],pow(sigma[s[i]],-2) )
+}
+for(i in 1:N_subjects){
+theta[i] ~ dnorm( 0 , pow(100,-2) )
+sigma[i] ~ dunif( 0, 10)
+}
+}
+" # close quote for modelString
+writeLines( modelString , con="TEMPmodel.txt" )
+
+# Initialize the chains based on MLE of data.
+# Option: Use single initial value for all chains:
+#  thetaInit = sum(y)/length(y)
+#  initsList = list( theta=thetaInit )
+# Option: Use function that generates random values for each chain:
+initsList = function() {
+  resampledY = sample( y , replace=TRUE )
+  thetaInit = sum(resampledY)/length(resampledY)
+  thetaInit = 0.001+0.998*thetaInit # keep away from 0,1
+  return( list( theta=thetaInit ) )
+}
+
+#Or, you can let JAGS choose the starting points automatically
+
+# Run the chains:
+jagsModel = jags.model( file="TEMPmodel.txt" , data=dataList , #inits=initsList , 
+                        n.chains=3 , n.adapt=500 )
+update( jagsModel , n.iter=500 )
+codaSamples = coda.samples( jagsModel , variable.names=c("theta") ,
+                            n.iter=3334 )
+save( codaSamples , file="example_Mcmc.Rdata") 
+
+draws = data.frame(do.call(rbind,codaSamples))
+
+draws$diff<-draws$theta.2.-draws$theta.1.
+length(which(draws$diff>0))/length(draws$diff)
+
+hdi(draws$diff, 0.95)
+
+
+#Additional
+# Examine the chains:
+# Convergence diagnostics:
+diagMCMC( codaObject=codaSamples , parName="theta[1]" )
+diagMCMC( codaObject=codaSamples , parName="theta[2]" )
+
+# Posterior descriptives:
+plotPost( codaSamples[,"theta[1]"] , main="theta[1]" , xlab=bquote(theta) )
+plotPost( codaSamples[,"theta[2]"] , main="theta[2]" , xlab=bquote(theta) )
+
+# Re-plot with different annotations:
+plotPost( codaSamples[,"theta"] , main="theta" , xlab=bquote(theta) , 
+          cenTend="median" , compVal=0.5 , ROPE=c(0.45,0.55) , credMass=0.90 )
