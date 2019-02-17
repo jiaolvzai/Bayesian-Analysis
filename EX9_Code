@@ -1,0 +1,111 @@
+Q1
+# defaulted missingness model
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") require(rjags)
+# Load the data:
+y = c(177, 236, 285, 350, NA) x = c(8, 15, 22, 29, 36) missing=c(0,0,0,0,1) n=length(y)
+# The y values are in the column named y.
+dataList = list( # Put the information into a list. y = y , n = n,
+x = x, missing = missing )
+# Define the model: modelString = "
+model {
+for ( i in 1:n ) {
+y[i] ~ dnorm(beta_0 + beta_weight*(x[i]-mean(x[i])),pow(sigma,-2)) missing[i] ~ dbern(p[i])
+logit(p[i]) <- a+b*(y[i]-250)
+}
+beta_0 ~ dnorm( 0 , pow(100,-2) )
+beta_weight ~ dnorm( 0 , pow(100,-2) )
+a ~ dnorm(0,pow(1,-2))
+b <- log(1.02)
+sigma ~ dunif(0,5)
+}
+"# close quote for modelString
+writeLines( modelString , con="TEMPmodel.txt" )
+# Run the chains:
+jagsModel = jags.model( file="TEMPmodel.txt" , data=dataList , #inits=initsList ,
+n.chains=3 , n.adapt=500 ) update( jagsModel , n.iter=500 )
+codaSamples = coda.samples( jagsModel , variable.names=c("beta_0","beta_weight","sigma") , n.iter=3334 )
+plot(codaSamples)
+summary(codaSamples)
+# Posterior descriptives:
+par(mfrow=c(1,1))
+draws = data.frame(do.call(rbind,codaSamples)) summary(draws)
+hist(draws$beta_0)
+hist(draws$beta_weight)
+# alternative missingness model
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") require(rjags)
+# Load the data:
+y = c(177, 236, 285, 350, NA) x = c(8, 15, 22, 29, 36) missing=c(0,0,0,0,1) n=length(y)
+# The y values are in the column named y.
+dataList = list( # Put the information into a list. y = y , n = n,
+x = x, missing = missing )
+# Define the model: modelString = "
+model {
+for ( i in 1:n ) {
+y[i] ~ dnorm(beta_0 + beta_weight*(x[i]-mean(x[i])),pow(sigma,-2)) missing[i] ~ dbern(p_missing)
+}
+beta_0 ~ dnorm( 0 , pow(100,-2) )
+beta_weight ~ dnorm( 0 , pow(100,-2) )
+a ~ dnorm(0,pow(1,-2))
+b <- log(1.02)
+sigma ~ dunif(0,5)
+p_missing ~ dbeta(1,1)
+}
+"# close quote for modelString
+writeLines( modelString , con="TEMPmodel.txt" )
+# Run the chains:
+jagsModel = jags.model( file="TEMPmodel.txt" , data=dataList , #inits=initsList ,
+n.chains=3 , n.adapt=500 ) update( jagsModel , n.iter=500 )
+codaSamples = coda.samples( jagsModel , variable.names=c("beta_0","beta_weight","sigma") , n.iter=3334 )
+plot(codaSamples) summary(codaSamples)
+# Posterior descriptives:
+par(mfrow=c(1,1))
+draws = data.frame(do.call(rbind,codaSamples)) summary(draws)
+hist(draws$beta_0)
+hist(draws$beta_weight)
+Q2
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") require(rjags)
+library(readr)
+# Load the data:
+crab <- read.table("crab.txt",col.names=c("Obs","C","S","W","Wt","Sa"))
+View(crab)
+dataList = list( # Put the information into a list.
+y = crab$Sa ,
+width=crab$W,
+n = nrow(crab), width75=as.numeric(quantile(crab$W,probs = 0.75)), width50=as.numeric(quantile(crab$W,probs = 0.5)), width25=as.numeric(quantile(crab$W,probs = 0.25)))
+# Define the model: modelString = "
+model {
+for ( i in 1:n ) {
+y[i] ~ dpois(lambda[i])
+log(lambda[i]) <- beta_0+beta_width*width[i]
+}
+Sa25 ~ dpois(exp(beta_0+beta_width*width25)) Sa50 ~ dpois(exp(beta_0+beta_width*width50)) Sa75 ~ dpois(exp(beta_0+beta_width*width75)) beta_0 ~ dnorm(0,.001)
+beta_width ~ dnorm(0,.001)
+}
+"# close quote for modelString
+writeLines( modelString , con="TEMPmodel.txt" )
+# Run the chains:
+jagsModel = jags.model( file="TEMPmodel.txt" , data=dataList , #inits=initsList ,
+n.chains=3 , n.adapt=500 ) update( jagsModel , n.iter=500 )
+codaSamples = coda.samples( jagsModel , variable.names=c("Sa25","Sa50","Sa75","beta_0","beta_width") ,
+n.iter=3334 )
+plot(codaSamples)
+summary(codaSamples)
+# Posterior descriptives:
+par(mfrow=c(1,1))
+draws = data.frame(do.call(rbind,codaSamples)) summary(draws)
+hist(draws$beta_0)
+hist(draws$beta_width)
+hist(draws$Sa25)
+hist(draws$Sa50)
+hist(draws$Sa75)
+#what is the posterior mean of the ratio of the expected number of satellites of the wider crab to the expected number of satellites of the thinner crab according to this model?
+exp(0.15724)
