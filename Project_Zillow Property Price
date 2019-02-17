@@ -1,0 +1,201 @@
+# In R
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework")
+
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") 
+require(rjags)
+
+#read data
+library(readr)
+data <- read_csv("properties_2017.csv")
+logError<-read_csv("train_2017.csv")
+
+#combine sale price data with feature data
+total <- merge(data,logError,by="parcelid")
+
+#first chose 7 varibles for regression
+data2<-total[,c("bathroomcnt","bedroomcnt","buildingqualitytypeid","calculatedfinishedsquarefeet","finishedsquarefeet15","lotsizesquarefeet","roomcnt","structuretaxvaluedollarcnt","landtaxvaluedollarcnt","regionidcounty","regionidcity","regionidzip","regionidneighborhood","logerror")]
+
+#remove N/A and sample
+data3<-na.omit(data2)
+
+#check correlation
+cor(data3)  
+
+#only keep 1 variable for pairs with corelation >0.7, no such pair found
+#The project seems does not specify how come the Zestimate, suppose it equals to assessment of land value+ structure value
+data3['estimateY']=data3$structuretaxvaluedollarcnt+data3$landtaxvaluedollarcnt
+
+#Since logerror=log(Zestimate)−log(SalePrice)
+#actual sales price=Zestimate/(10^logerror)
+data3['price']=data3$estimateY/(10^data3$logerror)
+
+length(unique(data3$regionidcounty))
+length(unique(data3$regionidcity))
+length(unique(data3$regionidzip))
+length(unique(data3$regionidneighborhood))
+
+#Since the sample data has 1 county, 14 cities, 127 zips and 154 neiborhoods, it seems proper to divide hierarchy based on city.
+
+#reindex city number to convenient hierarchy reference in the following steps
+index<-1:14
+library(plyr)
+data3$newCity<-mapvalues(data3$regionidcity, from = unique(data3$regionidcity), to = index)
+
+#name variables
+bathNum<-data3$bathroomcnt
+bedNum<-data3$bedroomcnt
+Assess<-data3$buildingqualitytypeid
+finishArea<-data3$calculatedfinishedsquarefeet
+totalArea<-data3$finishedsquarefeet15
+lotArea<-data3$lotsizesquarefeet
+roomNum<-data3$roomcnt
+newCity<-data3$newCity
+nCity<-length(unique(data3$regionidcity))
+Y<-data3$price
+N = nrow(data3)
+
+
+
+#Make a data list to feed to JAGS
+dataList = list(    
+  bathNum = bathNum,
+  bedNum = bedNum,
+  Assess = Assess,
+  finishArea = finishArea,
+  totalArea = totalArea,
+  lotArea = lotArea,
+  roomNum = roomNum,
+  Y = Y,
+  newCity = newCity,
+  N = N,
+  nCity = nCity
+)
+
+# Define the model:
+modelString = "
+
+model {
+for ( i in 1:N ) {
+Y[i] ~ dnorm(mu[i], tau)
+mu[i] <- alpha[newCity[i]] + b1[newCity[i]] * bathNum[i] + b2[newCity[i]] * bedNum[i] + b3[newCity[i]] * Assess[i] + b4[newCity[i]] * finishArea[i] + b5[newCity[i]] * totalArea[i] + b6[newCity[i]] * lotArea[i] + b7[newCity[i]] * roomNum[i]
+}
+
+for ( j in 1:nCity ) {
+alpha[j] ~ dnorm(mu00, tau00)
+b1[j] ~ dnorm(mu01, tau01)
+b2[j] ~ dnorm(mu02, tau02)
+b3[j] ~ dnorm(mu03, tau03)
+b4[j] ~ dnorm(mu04, tau04)
+b5[j] ~ dnorm(mu05, tau05)
+b6[j] ~ dnorm(mu06, tau06)
+b7[j] ~ dnorm(mu07, tau07)
+}
+
+mu00 ~ dnorm(0, .0001)
+mu01 ~ dnorm(0, .0001)
+mu02 ~ dnorm(0, .0001)
+mu03 ~ dnorm(0, .0001)
+mu04 ~ dnorm(0, .0001)
+mu05 ~ dnorm(0, .0001)
+mu06 ~ dnorm(0, .0001)
+mu07 ~ dnorm(0, .0001)
+tau00 ~ dgamma(0.001, 0.001)
+tau01 ~ dgamma(0.001, 0.001)
+tau02 ~ dgamma(0.001, 0.001)
+tau03 ~ dgamma(0.001, 0.001)
+tau04 ~ dgamma(0.001, 0.001)
+tau05 ~ dgamma(0.001, 0.001)
+tau06 ~ dgamma(0.001, 0.001)
+tau07 ~ dgamma(0.001, 0.001)
+tau ~ dgamma(0.001, 0.001)
+
+}
+" # close quote for modelString
+writeLines( modelString , con="TEMPmodel.txt" )
+
+# Initialize the chains based on MLE of data.
+# Option: Use single initial value for all chains:
+#  muInit = sum(y)/length(y)
+# initsList = function() {
+#   return(list(mu_00=rnorm(1),mu01=rnorm(1), mu02=rnorm(1), mu03=rnorm(1), mu04=rnorm(1), mu05=rnorm(1), mu06=rnorm(1), mu07=rnorm(1), tau00=runif(1),tau01=runif(1),tau02=runif(1),tau03=runif(1),tau04=runif(1),tau05=runif(1),tau06=runif(1),tau07=runif(1),tau=runif(1)))
+# }
+
+# Run the chains:
+jagsModel = jags.model( file="TEMPmodel.txt" , data=dataList , #inits=initsList , 
+                        n.chains=3 , n.adapt=500 )
+update( jagsModel , n.iter=500 )
+codaSamples = coda.samples( jagsModel , variable.names=c("alpha","b1","b2","b3","b4","b5","b6","b7") ,
+                            n.iter=3334 )
+# Examine the chains:
+# Convergence diagnostics:
+diagMCMC( codaObject=codaSamples , parName="alpha" )
+#saveGraph( file=paste0(fileNameRoot,"muDiag") , type="eps" )
+summary(codaSamples)
+
+#In Stan
+
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework")
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") 
+require(rjags)
+#read data
+library(readr)
+data <- read_csv("properties_2017.csv")
+logError<-read_csv("train_2017.csv")
+#combine sale price data with feature data
+total <- merge(data,logError,by="parcelid")
+
+#first chose 7 varibles for regression
+data2<-total[,c("bathroomcnt","bedroomcnt","buildingqualitytypeid","calculatedfinishedsquarefeet","finishedsquarefeet15","lotsizesquarefeet","roomcnt","structuretaxvaluedollarcnt","landtaxvaluedollarcnt","regionidcounty","regionidcity","regionidzip","regionidneighborhood","logerror")]
+
+#remove N/A
+data3<-na.omit(data2)
+
+#check correlation
+cor(data3)  
+
+#only keep 1 variable for pairs with corelation >0.7, no such pair found
+#The project seems does not specify how come the Zestimate, suppose it equals to assessment of land value+ structure value
+data3['estimateY']=data3$structuretaxvaluedollarcnt+data3$landtaxvaluedollarcnt
+
+#Since logerror=log(Zestimate)−log(SalePrice)
+#actual sales price=Zestimate/(10^logerror)
+data3['price']=data3$estimateY/(10^data3$logerror)
+
+length(unique(data3$regionidcounty))
+length(unique(data3$regionidcity))
+length(unique(data3$regionidzip))
+length(unique(data3$regionidneighborhood))
+
+#reindex city number for hierarchy reference
+index<-1:14
+library(plyr)
+
+data3$newCity<-mapvalues(data3$regionidcity, from = unique(data3$regionidcity), to = index)
+
+#Since the sample data has 1 county, 14 cities, 127 zips and 154 neiborhoods, it seems proper to divide hierarchy based on city.
+
+#Make a data list 
+dataList <- list(    
+  bathNum<-data3$bathroomcnt,
+  bedNum<-data3$bedroomcnt,
+  Assess<-data3$buildingqualitytypeid,
+  finishArea<-data3$calculatedfinishedsquarefeet,
+  totalArea<-data3$finishedsquarefeet15,
+  lotArea<-data3$lotsizesquarefeet,
+  roomNum<-data3$roomcnt,
+  newCity<-data3$newCity,
+  nCity<-length(unique(data3$regionidcity)),
+  Y<-data3$price,
+  N <- nrow(data3)
+)
+
+
+library("rstan")
+setwd("~/Desktop/R_WD/Bayesian Homework")
+fit <- stan(file = 'AddProject.stan', data = dataList, iter = 1000, chains = 3, warmup = 300);
+print(fit);
+plot(fit);
