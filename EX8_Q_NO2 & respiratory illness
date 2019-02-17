@@ -1,0 +1,26 @@
+A study was conducted to explore the association between levels of Nitrogen Dioxide (NO2) and respiratory illness in children. For a sample of children, investigators measured the NO2 levels in their bedrooms and recorded whether they had respiratory illness. The data were as follows:
+
+z=10	z=30	z=50
+y=1	21	20	15
+y=0	27	14	6
+where y indicates respiratory illness and z indicates measured NO2 level. For example, the 21 in the cell corresponding to y=1 and z=10 means that there were 21 children with respiratory illness and measured NO2 level equal to 10.
+
+1. Fit the model:
+
+logit(p(y=1|z))=α+βz.
+
+Report summaries of the posteriors of α and β.
+
+ 
+
+2. NO2 levels were measured with a course instrument (i.e. there is measurement error). Let x denote the (unobserved) true NO2 level. Suppose that from a previous calibration study we have the following model for the true NO2 level x as a function of the measured level z:
+
+x∼N(a+bz,σ.meas)
+
+where a=4.48, b=.76, and σ.meas^2=81.14.
+
+Find the posterior of γ and λ in the model
+
+logit(p(y=1|x))=γ+λx.
+
+Compare the posterior ofλ to the posterior of β from question 1.
