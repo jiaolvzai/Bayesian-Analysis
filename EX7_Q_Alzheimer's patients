@@ -1,0 +1,16 @@
+1. Capture-Recapture
+
+Suppose we want to estimate the number of birds living in a forest. One common approach to this task is the “capture–recapture model”. It goes as follows. Say the true population is equal to N birds. N is the number we want to estimate. We start by capturing a random sample of birds and marking them, say with some red paint on their wing. Suppose there are n birds who we capture and mark. This leaves U unmarked birds in the population, where U is unknown. We come back to the forest and capture another random sample of m birds, of which r are marked (i.e. had also been captured the first time) and u are unmarked. We then assume that marked and unmarked birds had the same probability of being captured in our second sample, i.e.:
+
+ r∼Binomial(n,θ)
+ u∼Binomial(U,θ)
+
+Say n=100, r=20, and u=200. Under weakly informative prior distributions, what is the posterior distribution of the population of birds.
+
+ 
+
+2. Sometimes Alzheimer's patients cheat on diagnostic memory tests that are administered over the phone by, for example, writing down the things they're supposed to try to remember. The data in cheat.csv give the results of a 40 question test administered to 118 patients. (Each row is a patient, each column is a question, and the question entry is 1 if the patient got the question correct.) Some of the patients cheated and some did not. Suppose that all cheaters answer questions correctly with probability LaTeX: \theta_1 θ 1 θ1 and all non-cheaters answer questions correctly with probability LaTeX: \theta_0 θ 0 θ0. Assuming that LaTeX: \theta_1 > \theta_0 θ 1 > θ 0 θ1>θ0 (i.e. encoding this assumption in your priors), fit a mixture model to estimate the probability that a given patient was cheating given their score.
+
+ 
+
+If you knew a patient cheated, you would administer an in-person test (at which it would be impossible to cheat) at the cost of $40. If a patient cheats but you do not realize it, the delayed diagnosis ultimately costs on average $100. Identify the patients in the data-set for whom it would be cost effective to order in-person tests. How did you choose these patients?
