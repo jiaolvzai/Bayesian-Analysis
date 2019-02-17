@@ -1,0 +1,33 @@
+In the JOBS II program evaluation, unemployed individuals were randomly assigned to either be offered entry into a job training program or be in a control group and receive less intensive assistance. Among other things, investigators hoped to determine the effect of job training on depression 6 months later. Many of those who were assigned to the job training group, however, did not actually attend the program. Nobody in the control group participated in the job training program.
+
+ 
+
+Let Z denote treatment assignment (i.e. Z=1 means that entry to the job program was offered). Let D denote actual treatment (i.e. D=1 means the study participant actually attended the job training program). Let Y denote change in depression score (negative is better) after 6 months. The data were as follows:
+
+Z	D	Mean Y	SD Y	N
+0	0	-.383	.803	167
+1	1	-.513	.74	183
+1	0	-.39	.784	152
+ 
+
+A) Compute an estimate of the Intent to Treat effect of the job training program on depression. (Nothing Bayesian here)
+
+B) Let LaTeX: \mu μ 1c denote the expected depression change among compliers assigned to the program. Let LaTeX: \mu μ 1n denote the expected depression change among nevertakers assigned to the program. Let LaTeX: \mu μ 0c denote the expected depression change among compliers assigned to control. Let LaTeX: \mu μ 0n denote the expected depression change among nevertakers assigned to control. Then the complier average causal effect is LaTeX: \mu_{1c}-\mu_{0c} μ 1 c − μ 0 c .
+
+Let Y1c denote the observed average depression change among compliers assigned to the program. Let Y1n denote the observed average depression change among nevertakers assigned to the program. Let Y0 denote the observed average depression change among those assigned to the control group. Let N1c denote the number of compliers assigned to the program, N1n the number of nevertakers assigned to the program, N0 the number of subjects assigned to the control, and N1 the total number of patients assigned to the program.
+
+Specify the model:
+
+Y 1 c ∼ N ( μ 1 c , σ 2 N 1 c )
+
+Y 1 n ∼ N ( μ 1 n , σ 2 N 1 n )
+
+Y 0 ∼ N ( θ μ 0 c + ( 1 − θ ) μ 0 n , σ 2 + θ μ 0 c 2 + ( 1 − θ ) μ 0 n 2 − ( θ μ 0 c + ( 1 − θ ) μ 0 n ) 2 N 0 )
+
+N 1 c ∼ B i n o m i a l ( θ , N 1 )
+
+where σ ^ 2  is assumed known to be .752. (The variance of the distribution generating Y0 is just the variance of a normal mixture distribution. This model would be simpler to specify if we had data for each subject.) Plot the posterior distribution of the CACE under the above model.
+
+ 
+
+C) Impose the Exclusion Restriction assumption that randomized treatment assignment Z has no direct effect on the outcome Y except through treatment received D. This assumption can be imposed by specifying that two parameters in the above model are actually equal. Plot the posterior of the CACE under the exclusion restriction. How does it differ from the ITT estimate and the posterior without the exclusion restriction? Do you think the exclusion restriction is reasonable in this case? Give an example of a mechanism by which the exclusion restriction might be violated (even if you do no not find the example likely).
