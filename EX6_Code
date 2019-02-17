@@ -1,0 +1,67 @@
+# Load the functions used below:
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") # Must download DBDA2Eprograms from book's site and modify path to its location
+require(rjags)               # Must have previously installed package rjags.
+
+# Load the data:
+y = c(rep(0,10-7),rep(1,7))        # The y values are in the column named y.
+Ntotal = length(y)  # Compute the total number of flips.
+dataList = list(    # Put the information into a list.
+  y = y , 
+  Ntotal = Ntotal 
+)
+
+# Define the model:
+modelString = "
+model {
+for ( i in 1:Ntotal ) {
+  y[i] ~ dbern( theta )
+}
+theta ~ dbeta( omega[m]*(kappa-2)+1,(1-omega[m])*(kappa-2)+1)
+omega[1]<-0.25
+omega[2]<-0.75
+kappa<-6
+m~dcat(mPriorProb[])
+mPriorProb[1]<-0.5
+mPriorProb[2]<-0.5
+}
+" # close quote for modelString
+writeLines( modelString , con="TEMPmodel.txt" )
+
+# Initialize the chains based on MLE of data.
+# Option: Use single initial value for all chains:
+#  thetaInit = sum(y)/length(y)
+#  initsList = list( theta=thetaInit )
+# Option: Use function that generates random values for each chain:
+initsList = function() {
+  resampledY = sample( y , replace=TRUE )
+  thetaInit = sum(resampledY)/length(resampledY)
+  thetaInit = 0.001+0.998*thetaInit # keep away from 0,1
+  return( list( theta=thetaInit ) )
+}
+
+#Or, you can let JAGS choose the starting points automatically
+
+# Run the chains:
+jagsModel = jags.model( file="TEMPmodel.txt" , data=dataList , #inits=initsList , 
+                        n.chains=3 , n.adapt=500 )
+update( jagsModel , n.iter=500 )
+codaSamples = coda.samples( jagsModel , variable.names=c("m") ,
+                            n.iter=3334 )
+save( codaSamples , file="example_Mcmc.Rdata") 
+plot(codaSamples)
+
+# Posterior descriptives:
+par(mfrow=c(1,1))
+draws = data.frame(do.call(rbind,codaSamples))
+hist(draws$m)
+length(which(draws$m==1))/(length(draws$m))
+length(which(draws$m==2))/(length(draws$m))
+
+#change kappa to 202 and rerun the model
+#result show as 0 and 1
+
+#The reason why the result are so different is that posterior is a compromise between prior and data.
+#A vague prior would reflect more on the data, while a more confirmed prior would exert significant influence on the posterior.
