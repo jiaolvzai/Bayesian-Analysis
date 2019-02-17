@@ -1,0 +1,27 @@
+#Code in R
+library("rstan") setwd("~/Desktop/R_WD/Bayesian Homework")
+schools_info <- list(N = nrow(data), school = data$school,
+Nschool = length(unique(data$school)), LRT = data$LRT,
+Y = data$Y)
+fit <- stan(file = 'test.stan', data = schools_info, iter = 3334, chains = 3, warmup = 500); print(fit);
+plot(fit);
+traceplot(fit, pars = c("beta"), inc_warmup = FALSE)
+traceplot(fit, pars = c("sigma"), inc_warmup = FALSE) traceplot(fit, pars = c("mu[3]"), inc_warmup = FALSE) traceplot(fit, pars = c("mu[20]"), inc_warmup = FALSE)
+
+
+
+#Code in Stan
+data {
+int<lower=1> N; int<lower=1> Nschool; int school[N]; vector[N] Y;
+vector[N] LRT;
+}
+parameters { vector[Nschool] mu;
+real mu_raw;
+real beta;
+real<lower=0> sigma; real<lower=0> sigma_raw;
+}
+model {
+for (i in 1:N) Y[i] ~ normal(mu[school[i]] + beta*LRT[i], sigma); for (j in 1:Nschool) mu[j] ~ normal(mu_raw, sigma_raw); sigma ~ normal(0,100);
+HW12_yw3100
+}
+sigma_raw ~ normal(0,100); mu_raw ~ normal(0,100); beta ~ normal(0,100);
