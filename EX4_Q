@@ -1,0 +1,23 @@
+The SAT is a standardized test taken by American high school students. 8 different schools ran separate experiments evaluating 8 slightly different SAT training programs. The results are summarized in the dataframe:
+
+data = data.frame(effect_ests = c(28,8,-3,7,-1,1,18,12),
+ses = c(15,10,16,11,9,11,10,18))
+
+The 'effect_ests' column contains the estimates of the average effects of the training programs. The 'ses' column contains the standard errors of the effect estimates. For example, it was estimated that the program in the first row increased SAT scores by 28 points on average, and the standard error of this estimate was 15 points. 
+
+ 
+
+Suppose that these data come from a hierarchical model of the form
+
+Y_i \sim N(\mu_i,\sigma_i)\\
+\mu_i \sim N(\mu_0,\tau_0) Y i ∼ N ( μ i , σ i ) μ i ∼ N ( μ 0 , τ 0 ) Yi∼N(μi,σi)μi∼N(μ0,τ0)
+
+where the Y_i Y i Yi are the observed effect estimates from the effect_ests column and the \sigma_i σ i σi are the standard errors in the ses column of the data. The \mu_i μ i μi represent the true effects of the programs implemented in each school. The estimated effects can differ from the real effects because of sampling variability. Estimate the parameters of this model in JAGS using vague priors. Using draws from the joint posterior distribution of the parameters, answer the following questions:
+
+ 
+
+1. What is the probability that the true effect of the program with the highest estimated effect is greater than the true effect of the program with the lowest estimated effect? 
+
+2. What is the probability that SAT programs are effective on average? 
+
+3. Suppose a new SAT program is to be instituted at a new school. What is the probability that it will be effective?
