@@ -1,0 +1,4 @@
+Exercise 10.1. [Purpose: To illustrate the fact that models with more distinctive predictions can be more easily discriminated.] Consider the scenario of Section 10.2.1, in which there were two coin factories, one of which was tail-biased and the other head-biased. Suppose we flip a coin that we know is from one of the two factories but we do not know which factory, and the prior probabilities of the factories are 50/50. The results show z = 7 heads in N = 10 flips.
+(A) If ω1 = 0.25, ω2 = 0.75, and κ = 6, what are the posterior probabilities of the factories?
+(B) If ω1 = 0.25, ω2 = 0.75, and κ = 202, what are the posterior probabilities of the factories?
+(C) Why are the posterior probabilities so different in parts A and B, even though the modes of the factories are the same?
