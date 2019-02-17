@@ -1,0 +1,62 @@
+Q1
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+yw3100
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") require(rjags)
+# Load the data: y = c(21,20,15) n = c(48,34,21) z = c(10,30,50)
+dataList = list( y = y , n = n,
+z=z )
+# The y values are in the column named y. # Put the information into a list.
+# Define the model: modelString = "
+model {
+for ( i in 1:3 ) {
+y[i] ~ dbinom( p[i], n[i]) logit(p[i])=alpha+beta*z[i] }
+alpha ~ dnorm( 0 , pow(100,-2) ) beta ~ dnorm( 0 , pow(100,-2) )
+}
+"# close quote for modelString
+writeLines( modelString , con="TEMPmodel.txt" )
+# Run the chains:
+jagsModel = jags.model( file="TEMPmodel.txt" , data=dataList , #inits=initsList ,
+n.chains=3 , n.adapt=500 ) update( jagsModel , n.iter=500 )
+codaSamples = coda.samples( jagsModel , variable.names=c("alpha","beta") , n.iter=3334 )
+plot(codaSamples) summary(codaSamples) # Posterior descriptives: par(mfrow=c(1,1))
+
+yw3100
+draws = data.frame(do.call(rbind,codaSamples)) summary(draws)
+hist(draws$alpha)
+hist(draws$beta)
+Q2
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") require(rjags)
+# Load the data: y = c(21,20,15) n = c(48,34,21) z = c(10,30,50)
+dataList = list(
+y = y , n = n,
+z = z,
+"a"=4.48,
+"b"=.76, "sigMeanSqr"=(81.14)^0.5
+# The y values are in the column named y. # Put the information into a list.
+)
+# Define the model: modelString = "
+model {
+for ( i in 1:3 ) {
+x[i] ~ dnorm(a+b*z[i],sigMeanSqr) y[i] ~ dbinom( p[i], n[i]) logit(p[i])=gamma+lambda*x[i]
+}
+gamma ~ dnorm( 0 , pow(100,-2) ) lambda ~ dnorm( 0 , pow(100,-2) )
+}
+"# close quote for modelString
+writeLines( modelString , con="TEMPmodel.txt" )
+
+yw3100
+# Run the chains:
+jagsModel = jags.model( file="TEMPmodel.txt" , data=dataList , #inits=initsList ,
+n.chains=3 , n.adapt=500 ) update( jagsModel , n.iter=500 )
+codaSamples = coda.samples( jagsModel , variable.names=c("gamma","lambda") , n.iter=3334 )
+plot(codaSamples) summary(codaSamples)
+# Posterior descriptives:
+par(mfrow=c(1,1))
+draws = data.frame(do.call(rbind,codaSamples)) summary(draws)
+hist(draws$gamma)
+hist(draws$lambda)
