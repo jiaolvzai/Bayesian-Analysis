@@ -1,0 +1,77 @@
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") require(rjags)
+y_1c = -.513
+N_1c = 183
+y_1n = -.39
+N_1n = 152
+y_00 = -.383
+N_00 = 167
+N_1 = N_1c + N_1n
+dataList = list( y_1c = -.513,
+N_1c = 183,
+y_1n = -.39,
+N_1n = 152,
+y_00 = -.383,
+N_00 = 167,
+N_1 = N_1c + N_1n
+)
+# Define the model:
+modelString = "
+model {
+y_1c ~ dnorm(mu_1c,pow((.75^2/N_1c)^0.5,-2))
+y_1n ~ dnorm(mu_1n,pow((.75^2/N_1n)^0.5,-2))
+y_00 ~ dnorm(theta*mu_0c+(1-theta)*mu_0n,pow(((.75^2+theta*mu_0c^2+(1- theta)*mu_0n^2-(theta*mu_0c+(1-theta)*mu_0n)^2)/N_00)^0.5,-2))
+N_1c ~ dbinom(theta,N_1)
+mu_1c ~ dunif(-10,10)
+mu_1n ~ dunif(-10,10)
+mu_0c ~ dunif(-10,10)
+mu_0n ~ dunif(-10,10)
+theta ~ dbeta(1,1)
+}
+"
+writeLines( modelString , con="TEMPmodel.txt" )
+jagsModel = jags.model( file="TEMPmodel.txt",data=dataList,n.chains=3, n.adapt=500 ) update( jagsModel , n.iter=500 ) codaSamples=coda.samples(jagsModel,variable.names=c("mu_0c","mu_1c","mu_0n","mu_1 n","theta"),n.iter=3334 )
+summary(codaSamples)
+samps = do.call('rbind',codaSamples) plotPost(samps[,'mu_1c']-samps[,'mu_0c'])
+#################
+#ADD THE EXCLUSION RESTRICTION
+library(rjags)
+setwd("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms")
+# Load the functions used below:
+source("~/Desktop/R_WD/Bayesian Homework/DBDA2Eprograms/DBDA2E-utilities.R") require(rjags)
+y_1c = -.513
+N_1c = 183
+y_1n = -.39
+N_1n = 152
+y_00 = -.383
+N_00 = 167
+N_1 = N_1c + N_1n
+dataList = list( y_1c = -.513,
+
+
+N_1c = 183,
+y_1n = -.39,
+N_1n = 152,
+y_00 = -.383,
+N_00 = 167,
+N_1 = N_1c + N_1n
+)
+# Define the model:
+modelString = "
+model {
+y_1c ~ dnorm(mu_1c,pow((.75^2/N_1c)^0.5,-2))
+y_1n ~ dnorm(mu_n,pow((.75^2/N_1n)^0.5,-2))
+y_00 ~ dnorm(theta*mu_0c+(1-theta)*mu_n,pow(((.75^2+theta*mu_0c^2+(1- theta)*mu_n^2-(theta*mu_0c+(1-theta)*mu_n)^2)/N_00)^0.5,-2))
+N_1c ~ dbinom(theta,N_1)
+mu_1c ~ dunif(-10,10)
+mu_n ~ dunif(-10,10)
+mu_0c ~ dunif(-10,10)
+theta ~ dbeta(1,1)
+}
+"
+writeLines( modelString , con="TEMPmodel.txt" )
+jagsModel = jags.model( file="TEMPmodel.txt",data=dataList,n.chains=3 , n.adapt=500 ) update( jagsModel , n.iter=500 ) codaSamples=coda.samples(jagsModel,variable.names=c("mu_0c","mu_1c","mu_n","theta"), n.iter=3334 )
+summary(codaSamples)
+samps = do.call('rbind',codaSamples) plotPost(samps[,'mu_1c']-samps[,'mu_0c'])
