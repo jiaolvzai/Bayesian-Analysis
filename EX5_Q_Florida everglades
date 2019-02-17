@@ -1,0 +1,17 @@
+1. Scientists in the Florida everglades captured 15 alligators and measured each one's snout length and weight.The code below enters the log lengths and log weights into a data frame:
+
+alligator = data.frame(
+  lnLength = c(3.87, 3.61, 4.33, 3.43, 3.81, 3.83, 3.46, 3.76,
+    3.50, 3.58, 4.19, 3.78, 3.71, 3.73, 3.78),
+  lnWeight = c(4.87, 3.93, 6.46, 3.33, 4.38, 4.70, 3.50, 4.50,
+    3.58, 3.64, 5.90, 4.43, 4.38, 4.42, 4.25)
+)
+
+Suppose we are interested in the association between weight and length. We let Y denote weight and X denote length, then specify the following data model:
+
+Y~N(alpha+beta*X,sigma^2)
+
+Choose vague priors for alpha, beta, and sigma and report summaries of their posterior distributions.  
+
+Suppose you are told that a new alligator has been captured with log snout length 4 but unknown weight. Produce a histogram of samples from the probability distribution representing your uncertainty about the new alligator's weight given the data you have observed and the model you have specified. What is the 95% HDI of this distribution (which is called a 'posterior predictive distribution')? 
+
